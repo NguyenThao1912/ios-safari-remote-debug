@@ -342,7 +342,9 @@ show_menu() {
     echo "12) Test access"
     echo "13) Quick fix (auto-fix common issues)"
     echo "14) Stop stack (scale to 0)"
-    echo "15) Exit"
+    echo "15) View logs (Google Cloud compatible)"
+    echo "16) Export logs to files"
+    echo "17) Exit"
     echo ""
 }
 
@@ -350,7 +352,7 @@ show_menu() {
 main() {
     while true; do
         show_menu
-        read -p "Choice [1-15]: " choice
+        read -p "Choice [1-17]: " choice
         echo ""
         
         case $choice in
@@ -397,6 +399,12 @@ main() {
                 ./stop.sh
                 ;;
             15)
+                ./view-logs.sh
+                ;;
+            16)
+                ./export-logs.sh
+                ;;
+            17)
                 print_info "Goodbye!"
                 exit 0
                 ;;
