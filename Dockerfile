@@ -21,16 +21,6 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Verify all required directories and files exist
-RUN echo "Checking source files..."
-RUN ls -la
-RUN test -f main.go || (echo "main.go not found!" && exit 1)
-RUN test -d build || (echo "build/ not found!" && exit 1)
-RUN test -d server || (echo "server/ not found!" && exit 1)
-RUN test -d injectedCode || (echo "injectedCode/ not found!" && exit 1)
-RUN test -d views || (echo "views/ not found!" && exit 1)
-RUN echo "All source directories present"
-
 # Ensure module is properly set up
 RUN echo "Setting up Go module..."
 RUN go mod tidy
