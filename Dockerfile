@@ -1,32 +1,45 @@
-# Build stage
-FROM golang:1.21.6-alpine AS builder
+# Single-stage Dockerfile (đơn giản hơn, dùng 1 image Go)
+# Nếu muốn image nhỏ hơn, có thể dùng multi-stage build (xem Dockerfile.multi-stage)
+FROM golang:1.23-alpine
 
-# Install git and dependencies for building
-RUN apk add --no-cache git ca-certificates
+# Install dependencies
+RUN apk add --no-cache git ca-certificates wget
 
 # Set Go environment variables
 ENV GOPROXY=https://proxy.golang.org,direct
 ENV GOSUMDB=sum.golang.org
 ENV CGO_ENABLED=0
-ENV GOOS=linux
-ENV GOARCH=amd64
 
 WORKDIR /app
 
 # Copy go mod files first for better caching
 COPY go.mod go.sum ./
 
-# Verify and download dependencies
-RUN go mod verify && \
-    go mod download && \
-    go mod tidy
+# Download dependencies
+RUN go mod download
 
 # Copy source code
 COPY . .
 
-# Verify Go module and dependencies
-RUN go mod verify && \
-    go list -m all
+# Verify all required directories and files exist
+RUN echo "Checking source files..." && \
+    ls -la && \
+    test -f main.go || (echo "main.go not found!" && exit 1) && \
+    test -d build || (echo "build/ not found!" && exit 1) && \
+    test -d server || (echo "server/ not found!" && exit 1) && \
+    test -d injectedCode || (echo "injectedCode/ not found!" && exit 1) && \
+    test -d views || (echo "views/ not found!" && exit 1) && \
+    echo "All source directories present"
+
+# Ensure module is properly set up and verify packages can be found
+RUN echo "Setting up Go module..." && \
+    go mod tidy && \
+    go mod verify && \
+    echo "Verifying packages can be found..." && \
+    go list ./build && \
+    go list ./server && \
+    go list . && \
+    echo "All packages verified"
 
 # Build the application with verbose output
 RUN echo "Building application..." && \
@@ -36,24 +49,6 @@ RUN echo "Building application..." && \
 
 # Build the debugger (you may want to customize the tag)
 RUN ./ios-safari-remote-debug build -t releases/Apple/Safari-17.5-macOS-14.5
-
-# Runtime stage
-FROM alpine:latest
-
-# Install ca-certificates and wget (for healthcheck)
-RUN apk --no-cache add ca-certificates wget
-
-WORKDIR /app
-
-# Copy built binary and dist folder from builder
-COPY --from=builder /app/ios-safari-remote-debug .
-COPY --from=builder /app/dist ./dist
-
-# Verify files are copied
-RUN ls -la && \
-    test -f ios-safari-remote-debug && \
-    test -d dist && \
-    echo "All files copied successfully"
 
 # Expose port
 EXPOSE 8924
