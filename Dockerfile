@@ -22,30 +22,32 @@ RUN go mod download
 COPY . .
 
 # Verify all required directories and files exist
-RUN echo "Checking source files..." && \
-    ls -la && \
-    test -f main.go || (echo "main.go not found!" && exit 1) && \
-    test -d build || (echo "build/ not found!" && exit 1) && \
-    test -d server || (echo "server/ not found!" && exit 1) && \
-    test -d injectedCode || (echo "injectedCode/ not found!" && exit 1) && \
-    test -d views || (echo "views/ not found!" && exit 1) && \
-    echo "All source directories present"
+RUN echo "Checking source files..."
+RUN ls -la
+RUN test -f main.go || (echo "main.go not found!" && exit 1)
+RUN test -d build || (echo "build/ not found!" && exit 1)
+RUN test -d server || (echo "server/ not found!" && exit 1)
+RUN test -d injectedCode || (echo "injectedCode/ not found!" && exit 1)
+RUN test -d views || (echo "views/ not found!" && exit 1)
+RUN echo "All source directories present"
 
-# Ensure module is properly set up and verify packages can be found
-RUN echo "Setting up Go module..." && \
-    go mod tidy && \
-    go mod verify && \
-    echo "Verifying packages can be found..." && \
-    go list ./build && \
-    go list ./server && \
-    go list . && \
-    echo "All packages verified"
+# Ensure module is properly set up
+RUN echo "Setting up Go module..."
+RUN go mod tidy
+RUN go mod verify
+
+# Verify packages can be found
+RUN echo "Verifying packages can be found..."
+RUN go list ./build
+RUN go list ./server
+RUN go list .
+RUN echo "All packages verified"
 
 # Build the application with verbose output
-RUN echo "Building application..." && \
-    go build -v -o ios-safari-remote-debug . && \
-    ls -lh ios-safari-remote-debug && \
-    echo "Build successful!"
+RUN echo "Building application..."
+RUN go build -v -o ios-safari-remote-debug .
+RUN ls -lh ios-safari-remote-debug
+RUN echo "Build successful!"
 
 # Build the debugger (you may want to customize the tag)
 RUN ./ios-safari-remote-debug build -t releases/Apple/Safari-17.5-macOS-14.5
