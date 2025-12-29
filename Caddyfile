@@ -1,0 +1,45 @@
+# Replace with your domain name
+# Caddy tự động cung cấp HTTPS với Let's Encrypt khi bạn chỉ định domain (không có http://)
+localhost {
+    # Reverse proxy to the app
+    reverse_proxy app:8924 {
+        # Force HTTP/1.1 (app doesn't support HTTP/2)
+        transport http {
+            versions 1.1
+        }
+        
+        # Headers
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up Host {host}
+    }
+
+    # Enable compression
+    encode gzip zstd
+
+    # Security headers
+    header {
+        # Remove server information
+        -Server
+        # Security headers
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # HSTS - Force HTTPS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/access.log
+        format json
+    }
+}
+
+# HTTP to HTTPS redirect (tự động redirect tất cả HTTP requests)
+http://localhost {
+    redir https://localhost{uri} permanent
+}
+

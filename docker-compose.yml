@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ios-safari-remote-debug
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8924:8924"
+    command: ["./ios-safari-remote-debug", "serve", "--address", "0.0.0.0:8924", "--proxy-host", "${PROXY_HOST:-127.0.0.1:9221}"]
+    networks:
+      - caddy-network
+    volumes:
+      # Optional: mount dist folder if you want to rebuild without rebuilding container
+      - ./dist:/app/dist:ro
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - caddy-network
+    depends_on:
+      - app
+
+networks:
+  caddy-network:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+
